@@ -15,6 +15,9 @@ import {
 
 export default function Home() {
   const [ledDuty, setLedDuty] = useState(0)
+  const [minSinDuty, setMinSinDuty] = useState(0)
+  const [maxSinDuty, setMaxSinDuty] = useState(50)
+  const [animTime, setAnimTime] = useState(4000)
 
   const incommingMessageHandlers = useRef([
     {
@@ -112,6 +115,33 @@ export default function Home() {
     client.publish('/setLedDuty', ledDuty.toString(10))
   }
 
+  const sendMinSinDuty = (client: any) => {
+    if (!client) {
+      console.log('(setMinSinDuty) Cannot publish, mqttClient: ', client)
+      return
+    }
+
+    client.publish('/setMinSinDuty', minSinDuty.toString(10))
+  }
+
+  const sendMaxSinDuty = (client: any) => {
+    if (!client) {
+      console.log('(setMaxSinDuty) Cannot publish, mqttClient: ', client)
+      return
+    }
+
+    client.publish('/setMaxSinDuty', maxSinDuty.toString(10))
+  }
+
+  const sendAnimTime = (client: any) => {
+    if (!client) {
+      console.log('(setAnimTime) Cannot publish, mqttClient: ', client)
+      return
+    }
+
+    client.publish('/setAnimTime', animTime.toString(10))
+  }
+
   return (
     <Container>
       <Box my={6}>
@@ -174,6 +204,78 @@ export default function Home() {
               }
               setLedDuty(val)
               sendLedDuty(mqttClientRef.current)
+            }}
+          />
+        </Stack>
+        <Stack my={2} direction="row" spacing={2} alignItems="center">
+          <TextField
+            label="Min sinwave duty (0 - 50)"
+            variant="filled"
+            value={minSinDuty}
+            type="number"
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              setMinSinDuty(parseInt(event.target.value))
+              sendMinSinDuty(mqttClientRef.current)
+            }}
+          />
+          <Slider
+            value={minSinDuty}
+            min={0}
+            max={50}
+            onChange={(_ev, val) => {
+              if (Array.isArray(val)) {
+                val = val[0]
+              }
+              setMinSinDuty(val)
+              sendMinSinDuty(mqttClientRef.current)
+            }}
+          />
+        </Stack>
+        <Stack my={2} direction="row" spacing={2} alignItems="center">
+          <TextField
+            label="Max sinwave Duty (0-50)"
+            variant="filled"
+            value={maxSinDuty}
+            type="number"
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              setMaxSinDuty(parseInt(event.target.value))
+              sendMaxSinDuty(mqttClientRef.current)
+            }}
+          />
+          <Slider
+            value={maxSinDuty}
+            min={0}
+            max={50}
+            onChange={(_ev, val) => {
+              if (Array.isArray(val)) {
+                val = val[0]
+              }
+              setMaxSinDuty(val)
+              sendMaxSinDuty(mqttClientRef.current)
+            }}
+          />
+        </Stack>
+        <Stack my={2} direction="row" spacing={2} alignItems="center">
+          <TextField
+            label="Cur Anim Time (ms) (1000 - 20,000)"
+            variant="filled"
+            value={animTime}
+            type="number"
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              setAnimTime(parseInt(event.target.value))
+              sendAnimTime(mqttClientRef.current)
+            }}
+          />
+          <Slider
+            value={animTime}
+            min={1000}
+            max={20000}
+            onChange={(_ev, val) => {
+              if (Array.isArray(val)) {
+                val = val[0]
+              }
+              setAnimTime(val)
+              sendAnimTime(mqttClientRef.current)
             }}
           />
         </Stack>
