@@ -2,6 +2,12 @@ import type { MqttClient, IClientOptions } from 'mqtt'
 import MQTT from 'mqtt'
 import { useEffect, useRef } from 'react'
 
+export interface handlerPayload {
+  topic: string
+  payload: any
+  packet: any
+}
+
 interface useMqttProps {
   uri: string
   options?: IClientOptions
