@@ -15,20 +15,20 @@ import {
   Button,
 } from '@mui/material'
 
-interface ShellyDimmerControllerProps {
+interface ShellyRelayControllerProps {
   topicPrefix: string
   name: string
 }
 
-export default function ShellyDimmerController({
+export default function ShellyRelayController({
   topicPrefix,
   name,
-}: ShellyDimmerControllerProps) {
+}: ShellyRelayControllerProps) {
   const [shellyOutput, setShellyOutput] = useState('')
 
   const incommingMessageHandlers = useRef([
     {
-      topic: `${topicPrefix}/status/light:0`,
+      topic: `${topicPrefix}/status/switch:0`,
       handler: ({ payload }: handlerPayload) => {
         setShellyOutput(JSON.stringify(payload, null, 2))
       },
@@ -49,25 +49,21 @@ export default function ShellyDimmerController({
     topicHandlers: incommingMessageHandlers.current,
     onConnectedHandler: (client) => setMqttClient(client),
   })
+  const getStatus = (client: any) => {
+    if (!client) {
+      console.log('(getStatus) Cannot publish, mqttClient: ', client)
+      return
+    }
 
+    client.publish('shellies/command', 'status_update')
+  }
   const turnOn = (client: any) => {
     if (!client) {
       console.log('(turnOn) Cannot publish, mqttClient: ', client)
       return
     }
 
-    client.publish(
-      `${topicPrefix}/rpc`,
-      JSON.stringify({
-        id: 0,
-        src: 'turnontopic',
-        method: 'Light.set',
-        params: {
-          id: 0,
-          on: true,
-        },
-      })
-    )
+    client.publish(`${topicPrefix}/command/switch:0`, 'on')
   }
   const turnOff = (client: any) => {
     if (!client) {
@@ -75,44 +71,22 @@ export default function ShellyDimmerController({
       return
     }
 
-    client.publish(
-      `${topicPrefix}/rpc`,
-      JSON.stringify({
-        id: 0,
-        src: 'turnofftopic',
-        method: 'Light.set',
-        params: {
-          id: 0,
-          on: false,
-        },
-      })
-    )
-  }
-
-  const setBrightness = (client: any, val: number) => {
-    if (!client) {
-      console.log('(setBrightness) Cannot publish, mqttClient: ', client)
-      return
-    }
-
-    client.publish(
-      `${topicPrefix}/rpc`,
-      JSON.stringify({
-        id: 0,
-        src: 'brightnesstopic',
-        method: 'Light.set',
-        params: {
-          id: 0,
-          brightness: val,
-        },
-      })
-    )
+    client.publish(`${topicPrefix}/command/switch:0`, 'off')
   }
 
   return (
     <Container>
       <Box my={3}>
         <Typography variant="h5">{name}</Typography>
+        {/* <pre>{shellyOutput}</pre> */}
+        {/* <Box display="inline-block" mx={1}>
+          <Button
+            variant="contained"
+            onClick={() => getStatus(mqttClientRef.current)}
+          >
+            getStatus
+          </Button>
+        </Box> */}
         <Box display="inline-block" mx={1}>
           <Button
             variant="contained"
@@ -129,17 +103,6 @@ export default function ShellyDimmerController({
             Off
           </Button>
         </Box>
-        <Slider
-          // value={ledDuty}
-          min={0}
-          max={100}
-          onChange={(_ev, val) => {
-            if (Array.isArray(val)) {
-              val = val[0]
-            }
-            setBrightness(mqttClientRef.current, val)
-          }}
-        />
       </Box>
     </Container>
   )

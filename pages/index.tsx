@@ -1,5 +1,6 @@
 import StringLightsController from '../components/stringLightsController'
 import ShellyDimmerController from '../components/shellyDimmerController'
+import ShellyRelayController from '../components/shellyRelayController'
 import { Box, Container } from '@mui/material'
 
 const stringLightsTopicPrefix = '/LIGHTING'
@@ -34,7 +35,9 @@ const renderLightControls = () => {
   return stringLightsControllers
 }
 
-const shellyDimmersData = [{ topicPrefix: 'BEDROOM_LIGHT', name: 'Bedroom' }]
+const shellyDimmersData = [
+  { topicPrefix: 'BEDROOM_LIGHT', name: 'Bedroom Overhead' },
+]
 
 const renderShellyDimmers = () => {
   let shellyDimmers = []
@@ -52,9 +55,30 @@ const renderShellyDimmers = () => {
   return shellyDimmers
 }
 
+const shellyRelaysData = [
+  { topicPrefix: 'BEDROOM_STRINGLIGHT', name: 'Bedroom Stringlight' },
+]
+
+const renderShellyRelays = () => {
+  let shellyRelays = []
+  for (const shellyRelayData of shellyRelaysData) {
+    shellyRelays.push(
+      <Box my={2} key={shellyRelayData.topicPrefix}>
+        <ShellyRelayController
+          topicPrefix={shellyRelayData.topicPrefix}
+          name={shellyRelayData.name}
+        />
+      </Box>
+    )
+  }
+
+  return shellyRelays
+}
+
 export default function Home() {
   return (
     <Container>
+      {renderShellyRelays()}
       {renderShellyDimmers()}
       {renderLightControls()}
     </Container>
