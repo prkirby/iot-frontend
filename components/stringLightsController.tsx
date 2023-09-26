@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { MqttClient } from 'mqtt'
 import useMqtt from '../lib/useMqtt'
 import { handlerPayload } from '../lib/useMqtt'
@@ -81,7 +81,10 @@ export default function StringLightsController({
       clientId: process.env.NEXT_PUBLIC_MQTT_CLIENTID + '_' + topicPrefix,
     },
     topicHandlers: incommingMessageHandlers.current,
-    onConnectedHandler: (client) => setMqttClient(client),
+    onConnectedHandler: (client) => {
+      setMqttClient(client)
+      sendGetStatus(client)
+    },
   })
 
   const mainLedOn = (client: any) => {
@@ -154,6 +157,15 @@ export default function StringLightsController({
     }
 
     client.publish(topicPrefix + '/setAnimTime', animTime.toString(10))
+  }
+
+  const sendGetStatus = (client: any) => {
+    if (!client) {
+      console.log('(getStatus) Cannot publish, mqttClient: ', client)
+      return
+    }
+
+    client.publish(topicPrefix + '/getStatus', 'true')
   }
 
   return (
