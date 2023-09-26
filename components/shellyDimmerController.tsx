@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import type { MqttClient } from 'mqtt'
 import useMqtt from '../lib/useMqtt'
 import { handlerPayload } from '../lib/useMqtt'
+import throttle from 'lodash/throttle'
 
 import {
   Box,
@@ -109,6 +110,11 @@ export default function ShellyDimmerController({
     )
   }
 
+  const throttledSetBrightness = throttle(setBrightness, 500, {
+    leading: true,
+    trailing: true,
+  })
+
   return (
     <Container>
       <Box my={3}>
@@ -137,7 +143,7 @@ export default function ShellyDimmerController({
             if (Array.isArray(val)) {
               val = val[0]
             }
-            setBrightness(mqttClientRef.current, val)
+            throttledSetBrightness(mqttClientRef.current, val)
           }}
         />
       </Box>
