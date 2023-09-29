@@ -13,13 +13,13 @@ export default function ShellyRelayController({
 }: ShellyRelayControllerProps) {
   const mqttContext = useContext(MqttContext)
 
-  const [shellyOutput, setShellyOutput] = useState('')
+  // const [shellyOutput, setShellyOutput] = useState('')
 
   const incommingMessageHandlers = [
     {
       topic: `${topicPrefix}/status/switch:0`,
       handler: ({ payload }: handlerPayload) => {
-        setShellyOutput(JSON.stringify(payload, null, 2))
+        // setShellyOutput(JSON.stringify(payload, null, 2))
       },
     },
   ]
@@ -63,7 +63,7 @@ export default function ShellyRelayController({
     <Container>
       <Box my={3}>
         <Typography variant="h5">{name}</Typography>
-        <pre>{shellyOutput}</pre>
+        {/* <pre>{shellyOutput}</pre> */}
         <Box display="inline-block" mx={1}>
           <Button
             variant="contained"

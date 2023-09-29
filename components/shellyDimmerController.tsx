@@ -25,13 +25,13 @@ export default function ShellyDimmerController({
 }: ShellyDimmerControllerProps) {
   const mqttContext = useContext(MqttContext)
 
-  const [shellyOutput, setShellyOutput] = useState('')
+  // const [shellyOutput, setShellyOutput] = useState('')
 
   const incommingMessageHandlers = [
     {
       topic: `${topicPrefix}/status/light:0`,
       handler: ({ payload }: handlerPayload) => {
-        setShellyOutput(JSON.stringify(payload, null, 2))
+        // setShellyOutput(JSON.stringify(payload, null, 2))
       },
     },
   ]
@@ -114,7 +114,7 @@ export default function ShellyDimmerController({
     <Container>
       <Box my={3}>
         <Typography variant="h5">{name}</Typography>
-        <pre>{shellyOutput}</pre>
+        {/* <pre>{shellyOutput}</pre> */}
         <Box display="inline-block" mx={1}>
           <Button
             variant="contained"
