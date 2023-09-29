@@ -5,6 +5,7 @@ import '@fontsource/roboto/500.css'
 import '@fontsource/roboto/700.css'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
+import MqttProvider from '../lib/MqttContext'
 
 const darkTheme = createTheme({
   palette: {
@@ -14,9 +15,11 @@ const darkTheme = createTheme({
 
 export default function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
-      <Component {...pageProps} />;
-    </ThemeProvider>
+    <MqttProvider>
+      <ThemeProvider theme={darkTheme}>
+        <CssBaseline />
+        <Component {...pageProps} />
+      </ThemeProvider>
+    </MqttProvider>
   )
 }

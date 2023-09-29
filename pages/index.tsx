@@ -1,6 +1,6 @@
-import StringLightsController from '../components/stringLightsController'
-import ShellyDimmerController from '../components/shellyDimmerController'
-import ShellyRelayController from '../components/shellyRelayController'
+import StringLightsController from '../components/StringLightsController'
+import ShellyDimmerController from '../components/ShellyDimmerController'
+import ShellyRelayController from '../components/ShellyRelayController'
 import { Box, Container } from '@mui/material'
 
 const stringLightsTopicPrefix = '/LIGHTING'

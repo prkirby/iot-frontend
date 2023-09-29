@@ -1,7 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import type { MqttClient } from 'mqtt'
-import useMqtt from '../lib/useMqtt'
-import { handlerPayload } from '../lib/useMqtt'
+import { useState, useRef, useEffect, useContext } from 'react'
+import { MqttContext, handlerPayload } from '../lib/MqttContext'
 
 import {
   Box,
@@ -23,6 +21,8 @@ export default function StringLightsController({
   topicPrefix,
   name,
 }: StringLightsControllerProps) {
+  const mqttContext = useContext(MqttContext)
+
   const [ledEnabled, setLedEnabled] = useState(false)
   const [ledDuty, setLedDuty] = useState(0)
   const [animEnabled, setAnimEnabled] = useState(false)
@@ -30,7 +30,7 @@ export default function StringLightsController({
   const [maxSinDuty, setMaxSinDuty] = useState(50)
   const [animTime, setAnimTime] = useState(4000)
 
-  const incommingMessageHandlers = useRef([
+  const incommingMessageHandlers = [
     {
       topic: topicPrefix + '/ledState',
       handler: ({ payload }: handlerPayload) => {
@@ -67,25 +67,18 @@ export default function StringLightsController({
         setAnimTime(payload)
       },
     },
-  ])
+  ]
 
-  const mqttClientRef = useRef<MqttClient | null>(null)
-  const setMqttClient = (client: MqttClient) => {
-    mqttClientRef.current = client
-  }
-  useMqtt({
-    uri: process.env.NEXT_PUBLIC_MQTT_URI,
-    options: {
-      // username: process.env.NEXT_PUBLIC_MQTT_USERNAME,
-      // password: process.env.NEXT_PUBLIC_MQTT_PASSWORD,
-      clientId: process.env.NEXT_PUBLIC_MQTT_CLIENTID + '_' + topicPrefix,
-    },
-    topicHandlers: incommingMessageHandlers.current,
-    onConnectedHandler: (client) => {
-      setMqttClient(client)
-      sendGetStatus(client)
-    },
-  })
+  useEffect(() => {
+    if (mqttContext?.clientReady) {
+      mqttContext.addHandlers(incommingMessageHandlers)
+      sendGetStatus(mqttContext.clientRef.current)
+    }
+
+    return () => {
+      mqttContext?.removeHandlers(incommingMessageHandlers)
+    }
+  }, [mqttContext?.clientReady])
 
   const mainLedOn = (client: any) => {
     if (!client) {
@@ -181,9 +174,9 @@ export default function StringLightsController({
               onChange={(e) => {
                 const ledEnabled = e.target.checked
                 if (ledEnabled) {
-                  mainLedOn(mqttClientRef.current)
+                  mainLedOn(mqttContext?.clientRef.current)
                 } else {
-                  mainLedOff(mqttClientRef.current)
+                  mainLedOff(mqttContext?.clientRef.current)
                 }
                 setLedEnabled(ledEnabled)
               }}
@@ -197,9 +190,9 @@ export default function StringLightsController({
               onChange={(e) => {
                 const animEnabled = e.target.checked
                 if (animEnabled) {
-                  ledAnimOn(mqttClientRef.current)
+                  ledAnimOn(mqttContext?.clientRef.current)
                 } else {
-                  ledAnimOff(mqttClientRef.current)
+                  ledAnimOff(mqttContext?.clientRef.current)
                 }
                 setAnimEnabled(animEnabled)
               }}
@@ -215,7 +208,7 @@ export default function StringLightsController({
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               const ledDuty = parseInt(event.target.value)
               setLedDuty(ledDuty)
-              sendLedDuty(mqttClientRef.current, ledDuty)
+              sendLedDuty(mqttContext?.clientRef.current, ledDuty)
             }}
           />
           <Slider
@@ -227,7 +220,7 @@ export default function StringLightsController({
                 val = val[0]
               }
               setLedDuty(val)
-              sendLedDuty(mqttClientRef.current, val)
+              sendLedDuty(mqttContext?.clientRef.current, val)
             }}
           />
         </Stack>
@@ -240,7 +233,7 @@ export default function StringLightsController({
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               const minSinDuty = parseInt(event.target.value)
               setMinSinDuty(minSinDuty)
-              sendMinSinDuty(mqttClientRef.current, minSinDuty)
+              sendMinSinDuty(mqttContext?.clientRef.current, minSinDuty)
             }}
           />
           <Slider
@@ -252,7 +245,7 @@ export default function StringLightsController({
                 val = val[0]
               }
               setMinSinDuty(val)
-              sendMinSinDuty(mqttClientRef.current, val)
+              sendMinSinDuty(mqttContext?.clientRef.current, val)
             }}
           />
         </Stack>
@@ -265,7 +258,7 @@ export default function StringLightsController({
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               const maxSinDuty = parseInt(event.target.value)
               setMaxSinDuty(maxSinDuty)
-              sendMaxSinDuty(mqttClientRef.current, maxSinDuty)
+              sendMaxSinDuty(mqttContext?.clientRef.current, maxSinDuty)
             }}
           />
           <Slider
@@ -277,7 +270,7 @@ export default function StringLightsController({
                 val = val[0]
               }
               setMaxSinDuty(val)
-              sendMaxSinDuty(mqttClientRef.current, val)
+              sendMaxSinDuty(mqttContext?.clientRef.current, val)
             }}
           />
         </Stack>
@@ -290,7 +283,7 @@ export default function StringLightsController({
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               const animTime = parseInt(event.target.value)
               setAnimTime(animTime)
-              sendAnimTime(mqttClientRef.current, animTime)
+              sendAnimTime(mqttContext?.clientRef.current, animTime)
             }}
           />
           <Slider
@@ -302,7 +295,7 @@ export default function StringLightsController({
                 val = val[0]
               }
               setAnimTime(val)
-              sendAnimTime(mqttClientRef.current, val)
+              sendAnimTime(mqttContext?.clientRef.current, val)
             }}
           />
         </Stack>

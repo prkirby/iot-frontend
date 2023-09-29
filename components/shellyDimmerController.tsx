@@ -1,7 +1,5 @@
-import { useState, useRef } from 'react'
-import type { MqttClient } from 'mqtt'
-import useMqtt from '../lib/useMqtt'
-import { handlerPayload } from '../lib/useMqtt'
+import { useState, useRef, useContext, useEffect } from 'react'
+import { MqttContext, handlerPayload } from '../lib/MqttContext'
 import throttle from 'lodash/throttle'
 
 import {
@@ -25,31 +23,28 @@ export default function ShellyDimmerController({
   topicPrefix,
   name,
 }: ShellyDimmerControllerProps) {
+  const mqttContext = useContext(MqttContext)
+
   const [shellyOutput, setShellyOutput] = useState('')
 
-  const incommingMessageHandlers = useRef([
+  const incommingMessageHandlers = [
     {
       topic: `${topicPrefix}/status/light:0`,
       handler: ({ payload }: handlerPayload) => {
         setShellyOutput(JSON.stringify(payload, null, 2))
       },
     },
-  ])
+  ]
 
-  const mqttClientRef = useRef<MqttClient | null>(null)
-  const setMqttClient = (client: MqttClient) => {
-    mqttClientRef.current = client
-  }
-  useMqtt({
-    uri: process.env.NEXT_PUBLIC_MQTT_URI,
-    options: {
-      // username: process.env.NEXT_PUBLIC_MQTT_USERNAME,
-      // password: process.env.NEXT_PUBLIC_MQTT_PASSWORD,
-      clientId: process.env.NEXT_PUBLIC_MQTT_CLIENTID + '_' + topicPrefix,
-    },
-    topicHandlers: incommingMessageHandlers.current,
-    onConnectedHandler: (client) => setMqttClient(client),
-  })
+  useEffect(() => {
+    if (mqttContext?.clientReady) {
+      mqttContext.addHandlers(incommingMessageHandlers)
+    }
+
+    return () => {
+      mqttContext?.removeHandlers(incommingMessageHandlers)
+    }
+  }, [mqttContext?.clientReady])
 
   const turnOn = (client: any) => {
     if (!client) {
@@ -119,10 +114,11 @@ export default function ShellyDimmerController({
     <Container>
       <Box my={3}>
         <Typography variant="h5">{name}</Typography>
+        <pre>{shellyOutput}</pre>
         <Box display="inline-block" mx={1}>
           <Button
             variant="contained"
-            onClick={() => turnOn(mqttClientRef.current)}
+            onClick={() => turnOn(mqttContext?.clientRef.current)}
           >
             On
           </Button>
@@ -130,7 +126,7 @@ export default function ShellyDimmerController({
         <Box display="inline-block" mx={1}>
           <Button
             variant="outlined"
-            onClick={() => turnOff(mqttClientRef.current)}
+            onClick={() => turnOff(mqttContext?.clientRef.current)}
           >
             Off
           </Button>
@@ -143,7 +139,7 @@ export default function ShellyDimmerController({
             if (Array.isArray(val)) {
               val = val[0]
             }
-            throttledSetBrightness(mqttClientRef.current, val)
+            throttledSetBrightness(mqttContext?.clientRef.current, val)
           }}
         />
       </Box>

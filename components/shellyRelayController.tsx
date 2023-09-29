@@ -1,19 +1,6 @@
-import { useState, useRef } from 'react'
-import type { MqttClient } from 'mqtt'
-import useMqtt from '../lib/useMqtt'
-import { handlerPayload } from '../lib/useMqtt'
-
-import {
-  Box,
-  // Button,
-  TextField,
-  Stack,
-  Container,
-  Typography,
-  Slider,
-  Switch,
-  Button,
-} from '@mui/material'
+import { useContext, useState, useEffect } from 'react'
+import { MqttContext, handlerPayload } from '../lib/MqttContext'
+import { Box, Container, Typography, Button } from '@mui/material'
 
 interface ShellyRelayControllerProps {
   topicPrefix: string
@@ -24,31 +11,29 @@ export default function ShellyRelayController({
   topicPrefix,
   name,
 }: ShellyRelayControllerProps) {
+  const mqttContext = useContext(MqttContext)
+
   const [shellyOutput, setShellyOutput] = useState('')
 
-  const incommingMessageHandlers = useRef([
+  const incommingMessageHandlers = [
     {
       topic: `${topicPrefix}/status/switch:0`,
       handler: ({ payload }: handlerPayload) => {
         setShellyOutput(JSON.stringify(payload, null, 2))
       },
     },
-  ])
+  ]
 
-  const mqttClientRef = useRef<MqttClient | null>(null)
-  const setMqttClient = (client: MqttClient) => {
-    mqttClientRef.current = client
-  }
-  useMqtt({
-    uri: process.env.NEXT_PUBLIC_MQTT_URI,
-    options: {
-      // username: process.env.NEXT_PUBLIC_MQTT_USERNAME,
-      // password: process.env.NEXT_PUBLIC_MQTT_PASSWORD,
-      clientId: process.env.NEXT_PUBLIC_MQTT_CLIENTID + '_' + topicPrefix,
-    },
-    topicHandlers: incommingMessageHandlers.current,
-    onConnectedHandler: (client) => setMqttClient(client),
-  })
+  useEffect(() => {
+    if (mqttContext?.clientReady) {
+      mqttContext.addHandlers(incommingMessageHandlers)
+    }
+
+    return () => {
+      mqttContext?.removeHandlers(incommingMessageHandlers)
+    }
+  }, [mqttContext?.clientReady])
+
   const getStatus = (client: any) => {
     if (!client) {
       console.log('(getStatus) Cannot publish, mqttClient: ', client)
@@ -78,19 +63,19 @@ export default function ShellyRelayController({
     <Container>
       <Box my={3}>
         <Typography variant="h5">{name}</Typography>
-        {/* <pre>{shellyOutput}</pre> */}
-        {/* <Box display="inline-block" mx={1}>
-          <Button
-            variant="contained"
-            onClick={() => getStatus(mqttClientRef.current)}
-          >
-            getStatus
-          </Button>
-        </Box> */}
+        <pre>{shellyOutput}</pre>
         <Box display="inline-block" mx={1}>
           <Button
             variant="contained"
-            onClick={() => turnOn(mqttClientRef.current)}
+            onClick={() => getStatus(mqttContext?.clientRef.current)}
+          >
+            getStatus
+          </Button>
+        </Box>
+        <Box display="inline-block" mx={1}>
+          <Button
+            variant="contained"
+            onClick={() => turnOn(mqttContext?.clientRef.current)}
           >
             On
           </Button>
@@ -98,7 +83,7 @@ export default function ShellyRelayController({
         <Box display="inline-block" mx={1}>
           <Button
             variant="outlined"
-            onClick={() => turnOff(mqttClientRef.current)}
+            onClick={() => turnOff(mqttContext?.clientRef.current)}
           >
             Off
           </Button>
