@@ -64,14 +64,14 @@ export default function ShellyRelayController({
       <Box my={3}>
         <Typography variant="h5">{name}</Typography>
         {/* <pre>{shellyOutput}</pre> */}
-        <Box display="inline-block" mx={1}>
+        {/* <Box display="inline-block" mx={1}>
           <Button
             variant="contained"
             onClick={() => getStatus(mqttContext?.clientRef.current)}
           >
             getStatus
           </Button>
-        </Box>
+        </Box> */}
         <Box display="inline-block" mx={1}>
           <Button
             variant="contained"
