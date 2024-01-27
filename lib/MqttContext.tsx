@@ -77,6 +77,7 @@ export default function MqttProvider({ children }: { children: ReactElement }) {
           process.env.NEXT_PUBLIC_MQTT_CLIENTID +
           '_' +
           randomstring.generate(8),
+        keepalive: 0,
       })
     } catch (error) {
       console.error('error', error)
