@@ -25,12 +25,10 @@ const ExpandMore = styled((props: ExpandMoreProps) => {
   }),
 }))
 
-const StyledCard = styled(Card)(`
-  @media (min-width: 600px) {
-    display: 'grid';
-    minHeight: '240px';
-  }
-`)
+const StyledCardContent = styled(CardContent)`
+  padding-top: 8px;
+  padding-bottom: 8px;
+`
 
 export default function ControlCard({
   name,
@@ -44,7 +42,7 @@ export default function ControlCard({
   }
 
   return (
-    <StyledCard>
+    <Card>
       <CardHeader
         action={
           <IconButton aria-label="settings">
@@ -59,7 +57,7 @@ export default function ControlCard({
         image="/static/images/cards/paella.jpg"
         alt="Paella dish"
       /> */}
-      <CardContent>{primaryContent}</CardContent>
+      <StyledCardContent>{primaryContent}</StyledCardContent>
       {secondaryContent && (
         <>
           <CardActions disableSpacing sx={{ justifySelf: 'center' }}>
@@ -75,8 +73,8 @@ export default function ControlCard({
         </>
       )}
       <Collapse in={expanded} timeout="auto" unmountOnExit>
-        <CardContent>{secondaryContent}</CardContent>
+        <StyledCardContent>{secondaryContent}</StyledCardContent>
       </Collapse>
-    </StyledCard>
+    </Card>
   )
 }

@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from 'react'
 import { MqttContext, handlerPayload } from '../../lib/MqttContext'
 import mqttPublish from '../../lib/mqttPublish'
 import debounce from '../../lib/debounce'
+import LightSwitch from '../LightSwitch'
 import ControlCard from '../ControlCard'
 import {
   ShellyDimmerControllerData,
@@ -105,24 +106,24 @@ export default function ShellyDimmerController({
 
   const debouncedSetBrightness = debounce(setBrightness, 100)
 
-  const renderPrimaryContent = () => (
-    <>
-      <Stack marginBottom={1} direction="row" spacing={2} alignItems="center">
-        <Typography variant="h6">On/Off</Typography>
-        <Switch
-          checked={switchActive}
-          onChange={() => {
-            const newState = !switchActive
-            setSwitchActive(newState)
-            if (newState) {
-              turnOn()
-            } else {
-              turnOff()
-            }
-          }}
-          inputProps={{ 'aria-label': 'controlled' }}
-        />
-      </Stack>
+  const renderPrimaryContent = () => {
+    const switchComponent = (
+      <Switch
+        checked={switchActive}
+        onChange={() => {
+          const newState = !switchActive
+          setSwitchActive(newState)
+          if (newState) {
+            turnOn()
+          } else {
+            turnOff()
+          }
+        }}
+        inputProps={{ 'aria-label': 'controlled' }}
+      />
+    )
+
+    const sliderComponent = (
       <Slider
         value={dimmerLevel}
         min={0}
@@ -137,8 +138,14 @@ export default function ShellyDimmerController({
           debouncedSetBrightness(val)
         }}
       />
-    </>
-  )
+    )
+    return (
+      <LightSwitch
+        switchComponent={switchComponent}
+        sliderComponent={sliderComponent}
+      />
+    )
+  }
 
   const renderSecondaryContent = () => (
     <>

@@ -2,15 +2,8 @@ import { useState, useEffect, useContext } from 'react'
 import { MqttContext, handlerPayload } from '../../lib/MqttContext'
 import { IN_TOPICS, OUT_TOPICS, StringLightsControllerProps } from './types'
 import ControlCard from '../ControlCard'
-import {
-  Box,
-  TextField,
-  Stack,
-  Container,
-  Typography,
-  Slider,
-  Switch,
-} from '@mui/material'
+import LightSwitch from '../LightSwitch'
+import { Stack, Typography, Slider, Switch } from '@mui/material'
 import mqttPublish from '../../lib/mqttPublish'
 import debounce from '../../lib/debounce'
 
@@ -104,45 +97,44 @@ export default function StringLightsController({
   )
 
   const renderPrimaryContent = () => {
+    const switchComponent = (
+      <Switch
+        checked={ledEnabled}
+        size="medium"
+        onChange={(e) => {
+          const ledEnabled = e.target.checked
+          if (ledEnabled) {
+            publish(OUT_TOPICS.LED_ENABLE)
+          } else {
+            publish(OUT_TOPICS.LED_DISABLE)
+          }
+          setLedEnabled(ledEnabled)
+        }}
+      />
+    )
+
+    const sliderComponent = (
+      <Slider
+        value={ledDuty}
+        min={0}
+        max={50}
+        valueLabelDisplay="auto"
+        valueLabelFormat={(value: number) => `${value * 2}%`}
+        onChange={(_ev, val) => {
+          if (Array.isArray(val)) {
+            val = val[0]
+          }
+          setLedDuty(val)
+          debouncedSetDuty(val)
+        }}
+      />
+    )
+
     return (
-      <>
-        <Stack
-          direction="row"
-          spacing={1}
-          justifyContent="left"
-          alignItems="center"
-          marginBottom={1}
-        >
-          <Typography variant="h6">On/Off</Typography>
-          <Switch
-            checked={ledEnabled}
-            size="medium"
-            onChange={(e) => {
-              const ledEnabled = e.target.checked
-              if (ledEnabled) {
-                publish(OUT_TOPICS.LED_ENABLE)
-              } else {
-                publish(OUT_TOPICS.LED_DISABLE)
-              }
-              setLedEnabled(ledEnabled)
-            }}
-          />
-        </Stack>
-        <Slider
-          value={ledDuty}
-          min={0}
-          max={50}
-          valueLabelDisplay="auto"
-          valueLabelFormat={(value: number) => `${value * 2}%`}
-          onChange={(_ev, val) => {
-            if (Array.isArray(val)) {
-              val = val[0]
-            }
-            setLedDuty(val)
-            debouncedSetDuty(val)
-          }}
-        />
-      </>
+      <LightSwitch
+        switchComponent={switchComponent}
+        sliderComponent={sliderComponent}
+      />
     )
   }
 

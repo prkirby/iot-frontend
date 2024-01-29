@@ -1,6 +1,7 @@
 import { useContext, useState, useEffect } from 'react'
 import { MqttContext, handlerPayload } from '../../lib/MqttContext'
-import { Stack, Typography, Switch, Paper } from '@mui/material'
+import { Switch, Paper } from '@mui/material'
+import LightSwitch from '../LightSwitch'
 import ControlCard from '../ControlCard'
 import mqttPublish from '../../lib/mqttPublish'
 import {
@@ -47,25 +48,23 @@ export default function ShellyRelayController({
     }
   }, [mqttContext?.clientReady])
 
-  const renderPrimaryContent = () => (
-    <>
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Typography variant="h6">On/Off</Typography>
-        <Switch
-          checked={switchActive}
-          onChange={() => {
-            const newState = !switchActive
-            setSwitchActive(newState)
-            publish(
-              `${topicPrefix}/${OUT_TOPICS.SW_COMMAND}`,
-              newState ? OUT_TOPICS.SW_ON : OUT_TOPICS.SW_OFF
-            )
-          }}
-          inputProps={{ 'aria-label': 'controlled' }}
-        />
-      </Stack>
-    </>
-  )
+  const renderPrimaryContent = () => {
+    const switchComponent = (
+      <Switch
+        checked={switchActive}
+        onChange={() => {
+          const newState = !switchActive
+          setSwitchActive(newState)
+          publish(
+            `${topicPrefix}/${OUT_TOPICS.SW_COMMAND}`,
+            newState ? OUT_TOPICS.SW_ON : OUT_TOPICS.SW_OFF
+          )
+        }}
+        inputProps={{ 'aria-label': 'controlled' }}
+      />
+    )
+    return <LightSwitch switchComponent={switchComponent} />
+  }
 
   const renderSecondaryContent = () => (
     <>
