@@ -1,7 +1,8 @@
 import StringLightsController from '../components/StringLightsController'
 import ShellyDimmerController from '../components/ShellyDimmerController'
 import ShellyRelayController from '../components/ShellyRelayController'
-import { Box, Container } from '@mui/material'
+import { Box, Container, Typography } from '@mui/material'
+import ControllerGrid from '../components/ControllerGrid'
 
 const stringLightsTopicPrefix = '/LIGHTING'
 const stringLightsData = [
@@ -21,14 +22,13 @@ const stringLightsData = [
 
 const renderLightControls = () => {
   let stringLightsControllers = []
-  for (const stringLightData of stringLightsData) {
+  for (const { id, name } of stringLightsData) {
     stringLightsControllers.push(
-      <Box my={6} key={stringLightData.id}>
-        <StringLightsController
-          topicPrefix={`${stringLightsTopicPrefix}/${stringLightData.id}`}
-          name={stringLightData.name}
-        />
-      </Box>
+      <StringLightsController
+        topicPrefix={`${stringLightsTopicPrefix}/${id}`}
+        name={name}
+        key={name}
+      />
     )
   }
 
@@ -41,14 +41,13 @@ const shellyDimmersData = [
 
 const renderShellyDimmers = () => {
   let shellyDimmers = []
-  for (const shellyDimmerData of shellyDimmersData) {
+  for (const { topicPrefix, name } of shellyDimmersData) {
     shellyDimmers.push(
-      <Box my={2} key={shellyDimmerData.topicPrefix}>
-        <ShellyDimmerController
-          topicPrefix={shellyDimmerData.topicPrefix}
-          name={shellyDimmerData.name}
-        />
-      </Box>
+      <ShellyDimmerController
+        topicPrefix={topicPrefix}
+        name={name}
+        key={name}
+      />
     )
   }
 
@@ -61,14 +60,9 @@ const shellyRelaysData = [
 
 const renderShellyRelays = () => {
   let shellyRelays = []
-  for (const shellyRelayData of shellyRelaysData) {
+  for (const { topicPrefix, name } of shellyRelaysData) {
     shellyRelays.push(
-      <Box my={2} key={shellyRelayData.topicPrefix}>
-        <ShellyRelayController
-          topicPrefix={shellyRelayData.topicPrefix}
-          name={shellyRelayData.name}
-        />
-      </Box>
+      <ShellyRelayController topicPrefix={topicPrefix} name={name} key={name} />
     )
   }
 
@@ -78,9 +72,13 @@ const renderShellyRelays = () => {
 export default function Home() {
   return (
     <Container>
-      {renderShellyRelays()}
-      {renderShellyDimmers()}
-      {renderLightControls()}
+      <Typography variant="h2" textAlign="center">
+        KIRBY_IOT
+      </Typography>
+      <ControllerGrid>
+        {[...renderShellyRelays(), ...renderShellyDimmers()]}
+      </ControllerGrid>
+      <ControllerGrid>{renderLightControls()}</ControllerGrid>
     </Container>
   )
 }

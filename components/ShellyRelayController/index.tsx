@@ -1,6 +1,7 @@
 import { useContext, useState, useEffect } from 'react'
 import { MqttContext, handlerPayload } from '../../lib/MqttContext'
-import { Stack, Container, Typography, Switch } from '@mui/material'
+import { Stack, Typography, Switch, Paper } from '@mui/material'
+import ControlCard from '../ControlCard'
 import mqttPublish from '../../lib/mqttPublish'
 import {
   ShellyRelayControllerProps,
@@ -8,6 +9,8 @@ import {
   IN_TOPICS,
   OUT_TOPICS,
 } from './types'
+import { Code } from '@mui/icons-material'
+import { CodeBlock, atomOneDark } from 'react-code-blocks'
 
 export default function ShellyRelayController({
   topicPrefix,
@@ -44,17 +47,10 @@ export default function ShellyRelayController({
     }
   }, [mqttContext?.clientReady])
 
-  return (
-    <Container>
-      <Stack
-        my={2}
-        direction="row"
-        spacing={2}
-        alignItems="left"
-        alignContent="center"
-      >
-        <Typography variant="h5">{name}</Typography>
-        {/* <pre>{JSON.stringify(shellyData, null, 2)}</pre> */}
+  const renderPrimaryContent = () => (
+    <>
+      <Stack direction="row" spacing={2} alignItems="center">
+        <Typography variant="h6">On/Off</Typography>
         <Switch
           checked={switchActive}
           onChange={() => {
@@ -68,6 +64,29 @@ export default function ShellyRelayController({
           inputProps={{ 'aria-label': 'controlled' }}
         />
       </Stack>
-    </Container>
+    </>
+  )
+
+  const renderSecondaryContent = () => (
+    <>
+      <Paper>
+        <Code />
+      </Paper>
+      <CodeBlock
+        text={JSON.stringify(shellyData, null, 2)}
+        language="json"
+        showLineNumbers={true}
+        startingLineNumber={1}
+        theme={atomOneDark}
+      />
+    </>
+  )
+
+  return (
+    <ControlCard
+      name={name}
+      primaryContent={renderPrimaryContent()}
+      secondaryContent={renderSecondaryContent()}
+    />
   )
 }

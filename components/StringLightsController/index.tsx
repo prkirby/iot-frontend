@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react'
 import { MqttContext, handlerPayload } from '../../lib/MqttContext'
 import { IN_TOPICS, OUT_TOPICS, StringLightsControllerProps } from './types'
+import ControlCard from '../ControlCard'
 import {
   Box,
   TextField,
@@ -102,85 +103,81 @@ export default function StringLightsController({
     100
   )
 
-  return (
-    <Container>
-      <Box my={6}>
-        <Typography variant="h3">{name}</Typography>
-        <Box my={4}>
-          <Stack my={2} direction="row" spacing={2} alignItems="left">
-            <Typography variant="h4">LED Enabled:</Typography>
-            <Switch
-              checked={ledEnabled}
-              size="medium"
-              onChange={(e) => {
-                const ledEnabled = e.target.checked
-                if (ledEnabled) {
-                  publish(OUT_TOPICS.LED_ENABLE)
-                } else {
-                  publish(OUT_TOPICS.LED_DISABLE)
-                }
-                setLedEnabled(ledEnabled)
-              }}
-            />
-          </Stack>
-          <Stack my={2} direction="row" spacing={2} alignItems="left">
-            <Typography variant="h4">Animation Enabled</Typography>
-            <Switch
-              checked={animEnabled}
-              size="medium"
-              onChange={(e) => {
-                const animEnabled = e.target.checked
-                if (animEnabled) {
-                  publish(OUT_TOPICS.LED_ANIM_ENABLE)
-                } else {
-                  publish(OUT_TOPICS.LED_ANIM_DISABLE)
-                }
-                setAnimEnabled(animEnabled)
-              }}
-            />
-          </Stack>
-        </Box>
-        <Stack my={2} direction="row" spacing={2} alignItems="center">
-          <TextField
-            label="Cur LED Duty (0-50)"
-            variant="filled"
-            value={ledDuty}
-            type="number"
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              const ledDuty = parseInt(event.target.value)
-              setLedDuty(ledDuty)
-              debouncedSetDuty(ledDuty)
-            }}
-          />
-          <Slider
-            value={ledDuty}
-            min={0}
-            max={50}
-            onChange={(_ev, val) => {
-              if (Array.isArray(val)) {
-                val = val[0]
+  const renderPrimaryContent = () => {
+    return (
+      <>
+        <Stack
+          direction="row"
+          spacing={1}
+          justifyContent="left"
+          alignItems="center"
+          marginBottom={1}
+        >
+          <Typography variant="h6">On/Off</Typography>
+          <Switch
+            checked={ledEnabled}
+            size="medium"
+            onChange={(e) => {
+              const ledEnabled = e.target.checked
+              if (ledEnabled) {
+                publish(OUT_TOPICS.LED_ENABLE)
+              } else {
+                publish(OUT_TOPICS.LED_DISABLE)
               }
-              setLedDuty(val)
-              debouncedSetDuty(val)
+              setLedEnabled(ledEnabled)
             }}
           />
         </Stack>
-        <Stack my={2} direction="row" spacing={2} alignItems="center">
-          <TextField
-            label="Min sinwave duty (0 - 50)"
-            variant="filled"
-            value={minSinDuty}
-            type="number"
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              const minSinDuty = parseInt(event.target.value)
-              setMinSinDuty(minSinDuty)
-              debouncedSetMinDuty(minSinDuty)
+        <Slider
+          value={ledDuty}
+          min={0}
+          max={50}
+          valueLabelDisplay="auto"
+          valueLabelFormat={(value: number) => `${value * 2}%`}
+          onChange={(_ev, val) => {
+            if (Array.isArray(val)) {
+              val = val[0]
+            }
+            setLedDuty(val)
+            debouncedSetDuty(val)
+          }}
+        />
+      </>
+    )
+  }
+
+  const renderSecondaryContent = () => {
+    return (
+      <>
+        <Stack
+          direction="row"
+          spacing={1}
+          justifyContent="left"
+          alignItems="center"
+        >
+          <Typography variant="h6">Pulse</Typography>
+          <Switch
+            checked={animEnabled}
+            size="medium"
+            onChange={(e) => {
+              const animEnabled = e.target.checked
+              if (animEnabled) {
+                publish(OUT_TOPICS.LED_ANIM_ENABLE)
+              } else {
+                publish(OUT_TOPICS.LED_ANIM_DISABLE)
+              }
+              setAnimEnabled(animEnabled)
             }}
           />
+        </Stack>
+        <Stack my={1} direction="column" spacing={2} alignItems="left">
+          <Typography variant="h6">Min Pulse Brightness</Typography>
           <Slider
             value={minSinDuty}
             min={0}
             max={50}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(value: number) => `${value * 2}%`}
             onChange={(_ev, val) => {
               if (Array.isArray(val)) {
                 val = val[0]
@@ -190,22 +187,14 @@ export default function StringLightsController({
             }}
           />
         </Stack>
-        <Stack my={2} direction="row" spacing={2} alignItems="center">
-          <TextField
-            label="Max sinwave Duty (0-50)"
-            variant="filled"
-            value={maxSinDuty}
-            type="number"
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              const maxSinDuty = parseInt(event.target.value)
-              setMaxSinDuty(maxSinDuty)
-              debouncedSetMaxDuty(maxSinDuty)
-            }}
-          />
+        <Stack my={1} direction="column" spacing={1} alignItems="left">
+          <Typography variant="h6">Max Pulse Brightness</Typography>
           <Slider
             value={maxSinDuty}
             min={0}
             max={50}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(value: number) => `${value * 2}%`}
             onChange={(_ev, val) => {
               if (Array.isArray(val)) {
                 val = val[0]
@@ -215,22 +204,14 @@ export default function StringLightsController({
             }}
           />
         </Stack>
-        <Stack my={2} direction="row" spacing={2} alignItems="center">
-          <TextField
-            label="Cur Anim Time (ms) (1000 - 20,000)"
-            variant="filled"
-            value={animTime}
-            type="number"
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              const animTime = parseInt(event.target.value)
-              setAnimTime(animTime)
-              publish(OUT_TOPICS.SET_ANIM_TIME, animTime)
-            }}
-          />
+        <Stack my={1} direction="column" spacing={1} alignItems="left">
+          <Typography variant="h6">Pulse Time</Typography>
           <Slider
             value={animTime}
             min={1000}
             max={20000}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(value: number) => `${value / 1000} secs`}
             onChange={(_ev, val) => {
               if (Array.isArray(val)) {
                 val = val[0]
@@ -240,7 +221,15 @@ export default function StringLightsController({
             }}
           />
         </Stack>
-      </Box>
-    </Container>
+      </>
+    )
+  }
+
+  return (
+    <ControlCard
+      name={name}
+      primaryContent={renderPrimaryContent()}
+      secondaryContent={renderSecondaryContent()}
+    />
   )
 }

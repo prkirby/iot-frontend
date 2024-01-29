@@ -2,13 +2,23 @@ import { useState, useContext, useEffect } from 'react'
 import { MqttContext, handlerPayload } from '../../lib/MqttContext'
 import mqttPublish from '../../lib/mqttPublish'
 import debounce from '../../lib/debounce'
+import ControlCard from '../ControlCard'
 import {
   ShellyDimmerControllerData,
   ShellyDimmerControllerProps,
   OUT_TOPICS,
   IN_TOPICS,
 } from './types'
-import { Stack, Container, Typography, Slider, Switch } from '@mui/material'
+import {
+  Stack,
+  Container,
+  Typography,
+  Slider,
+  Switch,
+  Paper,
+} from '@mui/material'
+import { CodeBlock, atomOneDark } from 'react-code-blocks'
+import { Code } from '@mui/icons-material'
 
 export default function ShellyDimmerController({
   topicPrefix,
@@ -95,6 +105,64 @@ export default function ShellyDimmerController({
 
   const debouncedSetBrightness = debounce(setBrightness, 100)
 
+  const renderPrimaryContent = () => (
+    <>
+      <Stack marginBottom={1} direction="row" spacing={2} alignItems="center">
+        <Typography variant="h6">On/Off</Typography>
+        <Switch
+          checked={switchActive}
+          onChange={() => {
+            const newState = !switchActive
+            setSwitchActive(newState)
+            if (newState) {
+              turnOn()
+            } else {
+              turnOff()
+            }
+          }}
+          inputProps={{ 'aria-label': 'controlled' }}
+        />
+      </Stack>
+      <Slider
+        value={dimmerLevel}
+        min={0}
+        max={100}
+        valueLabelDisplay="auto"
+        valueLabelFormat={(value: number) => `${value}%`}
+        onChange={(_ev, val) => {
+          if (Array.isArray(val)) {
+            val = val[0]
+          }
+          setDimmerLevel(val)
+          debouncedSetBrightness(val)
+        }}
+      />
+    </>
+  )
+
+  const renderSecondaryContent = () => (
+    <>
+      <Paper>
+        <Code />
+      </Paper>
+      <CodeBlock
+        text={JSON.stringify(shellyData, null, 2)}
+        language="json"
+        showLineNumbers={true}
+        startingLineNumber={1}
+        theme={atomOneDark}
+      />
+    </>
+  )
+
+  return (
+    <ControlCard
+      name={name}
+      primaryContent={renderPrimaryContent()}
+      secondaryContent={renderSecondaryContent()}
+    />
+  )
+
   return (
     <Container>
       <Stack
@@ -119,18 +187,7 @@ export default function ShellyDimmerController({
           inputProps={{ 'aria-label': 'controlled' }}
         />
       </Stack>
-      <Slider
-        value={dimmerLevel}
-        min={0}
-        max={100}
-        onChange={(_ev, val) => {
-          if (Array.isArray(val)) {
-            val = val[0]
-          }
-          setDimmerLevel(val)
-          debouncedSetBrightness(val)
-        }}
-      />
+
       {/* <pre>{JSON.stringify(shellyData, null, 2)}</pre> */}
     </Container>
   )
