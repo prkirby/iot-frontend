@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect, useContext } from 'react'
-import { MqttContext, handlerPayload } from '../lib/MqttContext'
-
+import { useState, useEffect, useContext } from 'react'
+import { MqttContext, handlerPayload } from '../../lib/MqttContext'
+import { IN_TOPICS, OUT_TOPICS, StringLightsControllerProps } from './types'
 import {
   Box,
-  // Button,
   TextField,
   Stack,
   Container,
@@ -11,11 +10,8 @@ import {
   Slider,
   Switch,
 } from '@mui/material'
-
-interface StringLightsControllerProps {
-  topicPrefix: string
-  name: string
-}
+import mqttPublish from '../../lib/mqttPublish'
+import debounce from '../../lib/debounce'
 
 export default function StringLightsController({
   topicPrefix,
@@ -32,47 +28,58 @@ export default function StringLightsController({
 
   const incommingMessageHandlers = [
     {
-      topic: topicPrefix + '/ledState',
+      topic: `${topicPrefix}/${IN_TOPICS.LED_STATE}`,
       handler: ({ payload }: handlerPayload) => {
         setLedEnabled(!!payload)
       },
     },
     {
-      topic: topicPrefix + '/ledDutyState',
+      topic: `${topicPrefix}/${IN_TOPICS.LED_DUTY_STATE}`,
       handler: ({ payload }: handlerPayload) => {
         setLedDuty(payload)
       },
     },
     {
-      topic: topicPrefix + '/ledAnimState',
+      topic: `${topicPrefix}/${IN_TOPICS.LED_ANIM_STATE}`,
       handler: ({ payload }: handlerPayload) => {
         setAnimEnabled(!!payload)
       },
     },
     {
-      topic: topicPrefix + '/minSinDutyState',
+      topic: `${topicPrefix}/${IN_TOPICS.MIN_SIN_DUTY_STATE}`,
       handler: ({ payload }: handlerPayload) => {
         setMinSinDuty(payload)
       },
     },
     {
-      topic: topicPrefix + '/maxSinDutyState',
+      topic: `${topicPrefix}/${IN_TOPICS.MAX_SIN_DUTY_STATE}`,
       handler: ({ payload }: handlerPayload) => {
         setMaxSinDuty(payload)
       },
     },
     {
-      topic: topicPrefix + '/animTimeState',
+      topic: `${topicPrefix}/${IN_TOPICS.ANIM_TIME_STATE}`,
       handler: ({ payload }: handlerPayload) => {
         setAnimTime(payload)
       },
     },
   ]
 
+  const publish = (topic: string, value?: number) => {
+    mqttPublish({
+      mqttContext: mqttContext ?? undefined,
+      topic: `${topicPrefix}/${topic}`,
+      value: value?.toString(10) ?? 'true',
+    })
+  }
+
+  /**
+   * Get light status on render
+   */
   useEffect(() => {
     if (mqttContext?.clientReady) {
       mqttContext.addHandlers(incommingMessageHandlers)
-      sendGetStatus(mqttContext.clientRef.current)
+      publish(OUT_TOPICS.GET_STATUS)
     }
 
     return () => {
@@ -80,86 +87,20 @@ export default function StringLightsController({
     }
   }, [mqttContext?.clientReady])
 
-  const mainLedOn = (client: any) => {
-    if (!client) {
-      console.log('(ledEnable) Cannot publish, mqttClient: ', client)
-      return
-    }
+  const debouncedSetDuty = debounce(
+    (ledDuty: number) => publish(OUT_TOPICS.SET_LED_DUTY, ledDuty),
+    100
+  )
 
-    client.publish(topicPrefix + '/ledEnable', 'true')
-  }
+  const debouncedSetMinDuty = debounce(
+    (minSinDuty: number) => publish(OUT_TOPICS.SET_MIN_SIN_DUTY, minSinDuty),
+    100
+  )
 
-  const mainLedOff = (client: any) => {
-    if (!client) {
-      console.log('(ledDisable) Cannot publish, mqttClient: ', client)
-      return
-    }
-
-    client.publish(topicPrefix + '/ledDisable', 'true')
-  }
-
-  const ledAnimOn = (client: any) => {
-    if (!client) {
-      console.log('(ledAnimEnable) Cannot publish, mqttClient: ', client)
-      return
-    }
-
-    client.publish(topicPrefix + '/ledAnimEnable', 'true')
-  }
-
-  const ledAnimOff = (client: any) => {
-    if (!client) {
-      console.log('(ledAnimOff) Cannot publish, mqttClient: ', client)
-      return
-    }
-
-    client.publish(topicPrefix + '/ledAnimDisable', 'true')
-  }
-
-  const sendLedDuty = (client: any, ledDuty: number) => {
-    if (!client) {
-      console.log('(setLedDuty) Cannot publish, mqttClient: ', client)
-      return
-    }
-
-    client.publish(topicPrefix + '/setLedDuty', ledDuty.toString(10))
-  }
-
-  const sendMinSinDuty = (client: any, minSinDuty: number) => {
-    if (!client) {
-      console.log('(setMinSinDuty) Cannot publish, mqttClient: ', client)
-      return
-    }
-
-    client.publish(topicPrefix + '/setMinSinDuty', minSinDuty.toString(10))
-  }
-
-  const sendMaxSinDuty = (client: any, maxSinDuty: number) => {
-    if (!client) {
-      console.log('(setMaxSinDuty) Cannot publish, mqttClient: ', client)
-      return
-    }
-
-    client.publish(topicPrefix + '/setMaxSinDuty', maxSinDuty.toString(10))
-  }
-
-  const sendAnimTime = (client: any, animTime: number) => {
-    if (!client) {
-      console.log('(setAnimTime) Cannot publish, mqttClient: ', client)
-      return
-    }
-
-    client.publish(topicPrefix + '/setAnimTime', animTime.toString(10))
-  }
-
-  const sendGetStatus = (client: any) => {
-    if (!client) {
-      console.log('(getStatus) Cannot publish, mqttClient: ', client)
-      return
-    }
-
-    client.publish(topicPrefix + '/getStatus', 'true')
-  }
+  const debouncedSetMaxDuty = debounce(
+    (maxSinDuty: number) => publish(OUT_TOPICS.SET_MAX_SIN_DUTY, maxSinDuty),
+    100
+  )
 
   return (
     <Container>
@@ -174,9 +115,9 @@ export default function StringLightsController({
               onChange={(e) => {
                 const ledEnabled = e.target.checked
                 if (ledEnabled) {
-                  mainLedOn(mqttContext?.clientRef.current)
+                  publish(OUT_TOPICS.LED_ENABLE)
                 } else {
-                  mainLedOff(mqttContext?.clientRef.current)
+                  publish(OUT_TOPICS.LED_DISABLE)
                 }
                 setLedEnabled(ledEnabled)
               }}
@@ -190,9 +131,9 @@ export default function StringLightsController({
               onChange={(e) => {
                 const animEnabled = e.target.checked
                 if (animEnabled) {
-                  ledAnimOn(mqttContext?.clientRef.current)
+                  publish(OUT_TOPICS.LED_ANIM_ENABLE)
                 } else {
-                  ledAnimOff(mqttContext?.clientRef.current)
+                  publish(OUT_TOPICS.LED_ANIM_DISABLE)
                 }
                 setAnimEnabled(animEnabled)
               }}
@@ -208,7 +149,7 @@ export default function StringLightsController({
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               const ledDuty = parseInt(event.target.value)
               setLedDuty(ledDuty)
-              sendLedDuty(mqttContext?.clientRef.current, ledDuty)
+              debouncedSetDuty(ledDuty)
             }}
           />
           <Slider
@@ -220,7 +161,7 @@ export default function StringLightsController({
                 val = val[0]
               }
               setLedDuty(val)
-              sendLedDuty(mqttContext?.clientRef.current, val)
+              debouncedSetDuty(val)
             }}
           />
         </Stack>
@@ -233,7 +174,7 @@ export default function StringLightsController({
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               const minSinDuty = parseInt(event.target.value)
               setMinSinDuty(minSinDuty)
-              sendMinSinDuty(mqttContext?.clientRef.current, minSinDuty)
+              debouncedSetMinDuty(minSinDuty)
             }}
           />
           <Slider
@@ -245,7 +186,7 @@ export default function StringLightsController({
                 val = val[0]
               }
               setMinSinDuty(val)
-              sendMinSinDuty(mqttContext?.clientRef.current, val)
+              debouncedSetMinDuty(val)
             }}
           />
         </Stack>
@@ -258,7 +199,7 @@ export default function StringLightsController({
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               const maxSinDuty = parseInt(event.target.value)
               setMaxSinDuty(maxSinDuty)
-              sendMaxSinDuty(mqttContext?.clientRef.current, maxSinDuty)
+              debouncedSetMaxDuty(maxSinDuty)
             }}
           />
           <Slider
@@ -270,7 +211,7 @@ export default function StringLightsController({
                 val = val[0]
               }
               setMaxSinDuty(val)
-              sendMaxSinDuty(mqttContext?.clientRef.current, val)
+              debouncedSetMaxDuty(val)
             }}
           />
         </Stack>
@@ -283,7 +224,7 @@ export default function StringLightsController({
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               const animTime = parseInt(event.target.value)
               setAnimTime(animTime)
-              sendAnimTime(mqttContext?.clientRef.current, animTime)
+              publish(OUT_TOPICS.SET_ANIM_TIME, animTime)
             }}
           />
           <Slider
@@ -295,7 +236,7 @@ export default function StringLightsController({
                 val = val[0]
               }
               setAnimTime(val)
-              sendAnimTime(mqttContext?.clientRef.current, val)
+              publish(OUT_TOPICS.SET_ANIM_TIME, val)
             }}
           />
         </Stack>
