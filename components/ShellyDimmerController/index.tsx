@@ -3,7 +3,7 @@ import { MqttContext, handlerPayload } from '../../lib/MqttContext'
 import mqttPublish from '../../lib/mqttPublish'
 import debounce from '../../lib/debounce'
 import LightSwitch from '../LightSwitch'
-import ControlCard from '../ControlCard'
+import ControlCard from '../ControllerCard'
 import {
   ShellyDimmerControllerData,
   ShellyDimmerControllerProps,
@@ -20,10 +20,12 @@ import {
 } from '@mui/material'
 import { CodeBlock, atomOneDark } from 'react-code-blocks'
 import { Code } from '@mui/icons-material'
+import useOverride from '../../lib/useOverride'
 
 export default function ShellyDimmerController({
   topicPrefix,
   name,
+  override,
 }: ShellyDimmerControllerProps) {
   const mqttContext = useContext(MqttContext)
 
@@ -105,6 +107,19 @@ export default function ShellyDimmerController({
   }
 
   const debouncedSetBrightness = debounce(setBrightness, 100)
+
+  /** Override Hook */
+  const overrideOn = () => {
+    turnOn()
+    setSwitchActive(true)
+  }
+
+  const overrideOff = () => {
+    turnOff()
+    setSwitchActive(false)
+  }
+
+  useOverride(overrideOn, overrideOff, override)
 
   const renderPrimaryContent = () => {
     const switchComponent = (

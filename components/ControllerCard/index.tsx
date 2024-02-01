@@ -13,7 +13,6 @@ import { ExpandMoreProps, ControlCardProps } from './types'
 /**
  * Borrowed mostly from https://mui.com/material-ui/react-card/ expandable card example
  */
-
 const ExpandMore = styled((props: ExpandMoreProps) => {
   const { expand, ...other } = props
   return <IconButton {...other} />
@@ -25,9 +24,22 @@ const ExpandMore = styled((props: ExpandMoreProps) => {
   }),
 }))
 
+const StyledCard = styled(Card)`
+  width: 100%;
+`
+
+const StyledCardHeader = styled(CardHeader)`
+  padding-top: 16px;
+  padding-bottom: 16px;
+`
+
 const StyledCardContent = styled(CardContent)`
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding-top: 0;
+  padding-bottom: 0;
+`
+
+const StyledCardActions = styled(CardActions)`
+  padding-top: 0;
 `
 
 export default function ControlCard({
@@ -42,8 +54,8 @@ export default function ControlCard({
   }
 
   return (
-    <Card>
-      <CardHeader
+    <StyledCard>
+      <StyledCardHeader
         action={
           <IconButton aria-label="settings">
             <MoreVertIcon />
@@ -60,7 +72,7 @@ export default function ControlCard({
       <StyledCardContent>{primaryContent}</StyledCardContent>
       {secondaryContent && (
         <>
-          <CardActions disableSpacing sx={{ justifySelf: 'center' }}>
+          <StyledCardActions disableSpacing sx={{ justifySelf: 'center' }}>
             <ExpandMore
               expand={expanded}
               onClick={handleExpandClick}
@@ -69,12 +81,12 @@ export default function ControlCard({
             >
               <ExpandMoreIcon />
             </ExpandMore>
-          </CardActions>
+          </StyledCardActions>
         </>
       )}
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <StyledCardContent>{secondaryContent}</StyledCardContent>
       </Collapse>
-    </Card>
+    </StyledCard>
   )
 }

@@ -1,6 +1,9 @@
+import { OVERRIDE_STATE } from '../ControllerPanel/types'
+
 export interface ShellyDimmerControllerProps {
   topicPrefix: string
   name: string
+  override: OVERRIDE_STATE
 }
 
 export interface ShellyDimmerControllerData {

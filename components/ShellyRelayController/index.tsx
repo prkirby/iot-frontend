@@ -1,8 +1,9 @@
 import { useContext, useState, useEffect } from 'react'
 import { MqttContext, handlerPayload } from '../../lib/MqttContext'
+import useOverride from '../../lib/useOverride'
 import { Switch, Paper } from '@mui/material'
 import LightSwitch from '../LightSwitch'
-import ControlCard from '../ControlCard'
+import ControlCard from '../ControllerCard'
 import mqttPublish from '../../lib/mqttPublish'
 import {
   ShellyRelayControllerProps,
@@ -16,6 +17,7 @@ import { CodeBlock, atomOneDark } from 'react-code-blocks'
 export default function ShellyRelayController({
   topicPrefix,
   name,
+  override,
 }: ShellyRelayControllerProps) {
   const mqttContext = useContext(MqttContext)
 
@@ -47,6 +49,19 @@ export default function ShellyRelayController({
       mqttContext?.removeHandlers(incommingMessageHandlers)
     }
   }, [mqttContext?.clientReady])
+
+  /** Override Hook */
+  const overrideOn = () => {
+    publish(`${topicPrefix}/${OUT_TOPICS.SW_COMMAND}`, OUT_TOPICS.SW_ON)
+    setSwitchActive(true)
+  }
+
+  const overrideOff = () => {
+    publish(`${topicPrefix}/${OUT_TOPICS.SW_COMMAND}`, OUT_TOPICS.SW_OFF)
+    setSwitchActive(false)
+  }
+
+  useOverride(overrideOn, overrideOff, override)
 
   const renderPrimaryContent = () => {
     const switchComponent = (

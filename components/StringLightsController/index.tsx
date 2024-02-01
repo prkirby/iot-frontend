@@ -1,13 +1,15 @@
 import { useState, useEffect, useContext } from 'react'
 import { MqttContext, handlerPayload } from '../../lib/MqttContext'
+import useOverride from '../../lib/useOverride'
 import { IN_TOPICS, OUT_TOPICS, StringLightsControllerProps } from './types'
-import ControlCard from '../ControlCard'
+import ControlCard from '../ControllerCard'
 import LightSwitch from '../LightSwitch'
 import { Stack, Typography, Slider, Switch } from '@mui/material'
 import mqttPublish from '../../lib/mqttPublish'
 import debounce from '../../lib/debounce'
 
 export default function StringLightsController({
+  override,
   topicPrefix,
   name,
 }: StringLightsControllerProps) {
@@ -95,6 +97,20 @@ export default function StringLightsController({
     (maxSinDuty: number) => publish(OUT_TOPICS.SET_MAX_SIN_DUTY, maxSinDuty),
     100
   )
+
+  /** Override Hook */
+  const overrideOn = () => {
+    console.log('stringlights override on')
+    publish(OUT_TOPICS.LED_ENABLE)
+    setLedEnabled(true)
+  }
+
+  const overrideOff = () => {
+    publish(OUT_TOPICS.LED_DISABLE)
+    setLedEnabled(false)
+  }
+
+  useOverride(overrideOn, overrideOff, override)
 
   const renderPrimaryContent = () => {
     const switchComponent = (
