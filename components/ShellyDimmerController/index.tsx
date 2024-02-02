@@ -116,7 +116,7 @@ export default function ShellyDimmerController({
         checked={enabled}
         onChange={() => {
           const newState = !enabled
-          newState ? turnOn : turnOff
+          newState ? turnOn() : turnOff()
         }}
         inputProps={{ 'aria-label': 'controlled' }}
       />
