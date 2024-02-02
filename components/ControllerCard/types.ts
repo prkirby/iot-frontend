@@ -9,4 +9,5 @@ export interface ControlCardProps {
   name: string
   primaryContent: React.ReactElement
   secondaryContent?: React.ReactElement
+  loading: boolean
 }

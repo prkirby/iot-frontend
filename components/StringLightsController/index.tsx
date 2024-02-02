@@ -1,21 +1,22 @@
 import { useState, useEffect, useContext } from 'react'
 import { MqttContext, handlerPayload } from '../../lib/MqttContext'
-import useOverride from '../../lib/useOverride'
 import { IN_TOPICS, OUT_TOPICS, StringLightsControllerProps } from './types'
 import ControlCard from '../ControllerCard'
 import LightSwitch from '../LightSwitch'
 import { Stack, Typography, Slider, Switch } from '@mui/material'
 import mqttPublish from '../../lib/mqttPublish'
 import debounce from '../../lib/debounce'
+import { ControllerContext } from '../../lib/ControllerContext'
 
 export default function StringLightsController({
-  override,
   topicPrefix,
   name,
 }: StringLightsControllerProps) {
+  const controllerContext = useContext(ControllerContext)
   const mqttContext = useContext(MqttContext)
 
-  const [ledEnabled, setLedEnabled] = useState(false)
+  const [enabled, setEnabled] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [ledDuty, setLedDuty] = useState(0)
   const [animEnabled, setAnimEnabled] = useState(false)
   const [minSinDuty, setMinSinDuty] = useState(0)
@@ -26,7 +27,8 @@ export default function StringLightsController({
     {
       topic: `${topicPrefix}/${IN_TOPICS.LED_STATE}`,
       handler: ({ payload }: handlerPayload) => {
-        setLedEnabled(!!payload)
+        setLoading(false)
+        setEnabled(!!payload)
       },
     },
     {
@@ -98,33 +100,29 @@ export default function StringLightsController({
     100
   )
 
-  /** Override Hook */
-  const overrideOn = () => {
-    console.log('stringlights override on')
+  const turnOn = () => {
+    setEnabled(true)
     publish(OUT_TOPICS.LED_ENABLE)
-    setLedEnabled(true)
   }
 
-  const overrideOff = () => {
+  const turnOff = () => {
+    setEnabled(false)
     publish(OUT_TOPICS.LED_DISABLE)
-    setLedEnabled(false)
   }
 
-  useOverride(overrideOn, overrideOff, override)
+  controllerContext[name] = {
+    turnOnFn: turnOn,
+    turnOffFn: turnOff,
+  }
 
   const renderPrimaryContent = () => {
     const switchComponent = (
       <Switch
-        checked={ledEnabled}
+        checked={enabled}
         size="medium"
         onChange={(e) => {
           const ledEnabled = e.target.checked
-          if (ledEnabled) {
-            publish(OUT_TOPICS.LED_ENABLE)
-          } else {
-            publish(OUT_TOPICS.LED_DISABLE)
-          }
-          setLedEnabled(ledEnabled)
+          ledEnabled ? turnOn() : turnOff()
         }}
       />
     )
@@ -236,6 +234,7 @@ export default function StringLightsController({
   return (
     <ControlCard
       name={name}
+      loading={loading}
       primaryContent={renderPrimaryContent()}
       secondaryContent={renderSecondaryContent()}
     />

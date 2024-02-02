@@ -9,6 +9,7 @@ import IconButton from '@mui/material/IconButton'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import { ExpandMoreProps, ControlCardProps } from './types'
+import { LinearProgress } from '@mui/material'
 
 /**
  * Borrowed mostly from https://mui.com/material-ui/react-card/ expandable card example
@@ -24,13 +25,9 @@ const ExpandMore = styled((props: ExpandMoreProps) => {
   }),
 }))
 
-const StyledCard = styled(Card)`
-  width: 100%;
-`
-
 const StyledCardHeader = styled(CardHeader)`
-  padding-top: 16px;
-  padding-bottom: 16px;
+  padding-top: 8px;
+  padding-bottom: 4px;
 `
 
 const StyledCardContent = styled(CardContent)`
@@ -40,12 +37,14 @@ const StyledCardContent = styled(CardContent)`
 
 const StyledCardActions = styled(CardActions)`
   padding-top: 0;
+  padding-bottom: 0;
 `
 
 export default function ControlCard({
   name,
   primaryContent,
   secondaryContent,
+  loading,
 }: ControlCardProps) {
   const [expanded, setExpanded] = React.useState(false)
 
@@ -54,7 +53,7 @@ export default function ControlCard({
   }
 
   return (
-    <StyledCard>
+    <Card>
       <StyledCardHeader
         action={
           <IconButton aria-label="settings">
@@ -63,30 +62,32 @@ export default function ControlCard({
         }
         title={name}
       />
-      {/* <CardMedia
-        component="img"
-        height="194"
-        image="/static/images/cards/paella.jpg"
-        alt="Paella dish"
-      /> */}
-      <StyledCardContent>{primaryContent}</StyledCardContent>
-      {secondaryContent && (
+      {loading ? (
+        <CardContent>
+          <LinearProgress />
+        </CardContent>
+      ) : (
         <>
-          <StyledCardActions disableSpacing sx={{ justifySelf: 'center' }}>
-            <ExpandMore
-              expand={expanded}
-              onClick={handleExpandClick}
-              aria-expanded={expanded}
-              aria-label="show more"
-            >
-              <ExpandMoreIcon />
-            </ExpandMore>
-          </StyledCardActions>
+          <StyledCardContent>{primaryContent}</StyledCardContent>
+          {secondaryContent && (
+            <>
+              <StyledCardActions disableSpacing sx={{ justifySelf: 'center' }}>
+                <ExpandMore
+                  expand={expanded}
+                  onClick={handleExpandClick}
+                  aria-expanded={expanded}
+                  aria-label="show more"
+                >
+                  <ExpandMoreIcon />
+                </ExpandMore>
+              </StyledCardActions>
+            </>
+          )}
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <StyledCardContent>{secondaryContent}</StyledCardContent>
+          </Collapse>
         </>
       )}
-      <Collapse in={expanded} timeout="auto" unmountOnExit>
-        <StyledCardContent>{secondaryContent}</StyledCardContent>
-      </Collapse>
-    </StyledCard>
+    </Card>
   )
 }

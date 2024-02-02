@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ControllerProvider from '../../lib/ControllerContext'
 import StringLightsController from '../StringLightsController'
 import ShellyDimmerController from '../ShellyDimmerController'
 import ShellyRelayController from '../ShellyRelayController'
@@ -9,21 +10,9 @@ import {
   STRING_LIGHTS_DATA,
   SHELLY_DIMMERS_DATA,
   SHELLY_RELAYS_DATA,
-  OVERRIDE_STATE,
 } from './types'
 
 export default function ControllerPanel() {
-  const [override, setOverride] = useState(OVERRIDE_STATE.INIT)
-  const allOnFn = () => {
-    console.log('all On')
-    setOverride(OVERRIDE_STATE.ON)
-  }
-
-  const allOffFn = () => {
-    console.log('all off')
-    setOverride(OVERRIDE_STATE.OFF)
-  }
-
   const renderLightControls = () => {
     let stringLightsControllers = []
     for (const { id, name } of STRING_LIGHTS_DATA) {
@@ -32,7 +21,6 @@ export default function ControllerPanel() {
           topicPrefix={`${STRING_LIGHTS_TOPIC_PREFIX}/${id}`}
           name={name}
           key={name}
-          override={override}
         />
       )
     }
@@ -42,13 +30,12 @@ export default function ControllerPanel() {
 
   const renderShellyDimmers = () => {
     let shellyDimmers = []
-    for (const { topicPrefix, name } of SHELLY_DIMMERS_DATA) {
+    for (const { topicPrefix, name, id } of SHELLY_DIMMERS_DATA) {
       shellyDimmers.push(
         <ShellyDimmerController
-          topicPrefix={topicPrefix}
+          topicPrefix={topicPrefix ?? ''}
           name={name}
-          key={name}
-          override={override}
+          key={id}
         />
       )
     }
@@ -58,13 +45,12 @@ export default function ControllerPanel() {
 
   const renderShellyRelays = () => {
     let shellyRelays = []
-    for (const { topicPrefix, name } of SHELLY_RELAYS_DATA) {
+    for (const { topicPrefix, name, id } of SHELLY_RELAYS_DATA) {
       shellyRelays.push(
         <ShellyRelayController
-          topicPrefix={topicPrefix}
+          topicPrefix={topicPrefix ?? ''}
           name={name}
-          key={name}
-          override={override}
+          key={id}
         />
       )
     }
@@ -73,13 +59,12 @@ export default function ControllerPanel() {
   }
 
   return (
-    <>
+    <ControllerProvider>
+      <ControllerGrid>{[<OverrideController key="override" />]}</ControllerGrid>
       <ControllerGrid>
-        {<OverrideController allOnFn={allOnFn} allOffFn={allOffFn} />}
+        {[...renderShellyRelays(), ...renderShellyDimmers()]}
       </ControllerGrid>
-      <ControllerGrid>{renderShellyRelays()}</ControllerGrid>
       <ControllerGrid>{renderLightControls()}</ControllerGrid>
-      <ControllerGrid>{renderShellyDimmers()}</ControllerGrid>
-    </>
+    </ControllerProvider>
   )
 }

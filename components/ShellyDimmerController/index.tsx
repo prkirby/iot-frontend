@@ -10,28 +10,22 @@ import {
   OUT_TOPICS,
   IN_TOPICS,
 } from './types'
-import {
-  Stack,
-  Container,
-  Typography,
-  Slider,
-  Switch,
-  Paper,
-} from '@mui/material'
+import { Slider, Switch, Paper } from '@mui/material'
 import { CodeBlock, atomOneDark } from 'react-code-blocks'
 import { Code } from '@mui/icons-material'
-import useOverride from '../../lib/useOverride'
+import { ControllerContext } from '../../lib/ControllerContext'
 
 export default function ShellyDimmerController({
   topicPrefix,
   name,
-  override,
 }: ShellyDimmerControllerProps) {
   const mqttContext = useContext(MqttContext)
+  const controllerContext = useContext(ControllerContext)
 
+  const [enabled, setEnabled] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [shellyData, setShellyData] =
     useState<ShellyDimmerControllerData | null>()
-  const [switchActive, setSwitchActive] = useState(false)
   const [dimmerLevel, setDimmerLevel] = useState(0)
 
   const incommingMessageHandlers = [
@@ -39,9 +33,10 @@ export default function ShellyDimmerController({
       topic: `${topicPrefix}/${IN_TOPICS.STATUS}`,
       handler: ({ payload }: handlerPayload) => {
         const data = payload as ShellyDimmerControllerData
-        setShellyData(data)
-        setSwitchActive(data.output)
+        setEnabled(data.output)
         setDimmerLevel(data.brightness)
+        setShellyData(data)
+        setLoading(false)
       },
     },
   ]
@@ -62,6 +57,7 @@ export default function ShellyDimmerController({
   }, [mqttContext?.clientReady])
 
   const turnOn = () => {
+    setEnabled(true)
     publish(
       `${topicPrefix}/${OUT_TOPICS.DIMMER_COMMAND}`,
       JSON.stringify({
@@ -77,6 +73,7 @@ export default function ShellyDimmerController({
   }
 
   const turnOff = () => {
+    setEnabled(false)
     publish(
       `${topicPrefix}/${OUT_TOPICS.DIMMER_COMMAND}`,
       JSON.stringify({
@@ -89,6 +86,11 @@ export default function ShellyDimmerController({
         },
       })
     )
+  }
+
+  controllerContext[name] = {
+    turnOnFn: turnOn,
+    turnOffFn: turnOff,
   }
 
   const setBrightness = (val: number) => {
@@ -108,31 +110,13 @@ export default function ShellyDimmerController({
 
   const debouncedSetBrightness = debounce(setBrightness, 100)
 
-  /** Override Hook */
-  const overrideOn = () => {
-    turnOn()
-    setSwitchActive(true)
-  }
-
-  const overrideOff = () => {
-    turnOff()
-    setSwitchActive(false)
-  }
-
-  useOverride(overrideOn, overrideOff, override)
-
   const renderPrimaryContent = () => {
     const switchComponent = (
       <Switch
-        checked={switchActive}
+        checked={enabled}
         onChange={() => {
-          const newState = !switchActive
-          setSwitchActive(newState)
-          if (newState) {
-            turnOn()
-          } else {
-            turnOff()
-          }
+          const newState = !enabled
+          newState ? turnOn : turnOff
         }}
         inputProps={{ 'aria-label': 'controlled' }}
       />
@@ -182,35 +166,7 @@ export default function ShellyDimmerController({
       name={name}
       primaryContent={renderPrimaryContent()}
       secondaryContent={renderSecondaryContent()}
+      loading={loading}
     />
-  )
-
-  return (
-    <Container>
-      <Stack
-        my={2}
-        direction="row"
-        spacing={2}
-        alignItems="left"
-        alignContent="center"
-      >
-        <Typography variant="h5">{name}</Typography>
-        <Switch
-          checked={switchActive}
-          onChange={() => {
-            const newState = !switchActive
-            setSwitchActive(newState)
-            if (newState) {
-              turnOn()
-            } else {
-              turnOff()
-            }
-          }}
-          inputProps={{ 'aria-label': 'controlled' }}
-        />
-      </Stack>
-
-      {/* <pre>{JSON.stringify(shellyData, null, 2)}</pre> */}
-    </Container>
   )
 }

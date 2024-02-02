@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect } from 'react'
 import { MqttContext, handlerPayload } from '../../lib/MqttContext'
-import useOverride from '../../lib/useOverride'
+import { ControllerContext } from '../../lib/ControllerContext'
 import { Switch, Paper } from '@mui/material'
 import LightSwitch from '../LightSwitch'
 import ControlCard from '../ControllerCard'
@@ -17,20 +17,22 @@ import { CodeBlock, atomOneDark } from 'react-code-blocks'
 export default function ShellyRelayController({
   topicPrefix,
   name,
-  override,
 }: ShellyRelayControllerProps) {
   const mqttContext = useContext(MqttContext)
+  const controllerContext = useContext(ControllerContext)
 
+  const [loading, setLoading] = useState(true)
+  const [enabled, setEnabled] = useState(false)
   const [shellyData, setShellyData] = useState<ShellyRelayStatusData | null>()
-  const [switchActive, setSwitchActive] = useState(false)
 
   const incommingMessageHandlers = [
     {
       topic: `${topicPrefix}/${IN_TOPICS.STATUS}`,
       handler: ({ payload }: handlerPayload) => {
+        setLoading(false)
         const data = payload as ShellyRelayStatusData
         setShellyData(data)
-        setSwitchActive(data.output)
+        setEnabled(data.output)
       },
     },
   ]
@@ -39,6 +41,9 @@ export default function ShellyRelayController({
     mqttPublish({ mqttContext: mqttContext ?? undefined, topic, value })
   }
 
+  /**
+   * Mqtt add handlers
+   */
   useEffect(() => {
     if (mqttContext?.clientReady) {
       mqttContext.addHandlers(incommingMessageHandlers)
@@ -50,30 +55,28 @@ export default function ShellyRelayController({
     }
   }, [mqttContext?.clientReady])
 
-  /** Override Hook */
-  const overrideOn = () => {
+  const turnOn = () => {
+    setEnabled(true)
     publish(`${topicPrefix}/${OUT_TOPICS.SW_COMMAND}`, OUT_TOPICS.SW_ON)
-    setSwitchActive(true)
   }
 
-  const overrideOff = () => {
+  const turnOff = () => {
+    setEnabled(false)
     publish(`${topicPrefix}/${OUT_TOPICS.SW_COMMAND}`, OUT_TOPICS.SW_OFF)
-    setSwitchActive(false)
   }
 
-  useOverride(overrideOn, overrideOff, override)
+  controllerContext[name] = {
+    turnOnFn: turnOn,
+    turnOffFn: turnOff,
+  }
 
   const renderPrimaryContent = () => {
     const switchComponent = (
       <Switch
-        checked={switchActive}
+        checked={enabled}
         onChange={() => {
-          const newState = !switchActive
-          setSwitchActive(newState)
-          publish(
-            `${topicPrefix}/${OUT_TOPICS.SW_COMMAND}`,
-            newState ? OUT_TOPICS.SW_ON : OUT_TOPICS.SW_OFF
-          )
+          const newState = !enabled
+          newState ? turnOn() : turnOff()
         }}
         inputProps={{ 'aria-label': 'controlled' }}
       />
@@ -101,6 +104,7 @@ export default function ShellyRelayController({
       name={name}
       primaryContent={renderPrimaryContent()}
       secondaryContent={renderSecondaryContent()}
+      loading={loading}
     />
   )
 }
